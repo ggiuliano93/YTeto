@@ -1,0 +1,9 @@
+Package: com.ggiuliano93.yteto
+Name: YTeto
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: A modified YouTube with extra tweaks
+Maintainer: ggiuliano93
+Author: ggiuliano93
+Section: Tweaks
+Depends: com.poomsmart.yougroupsettings
