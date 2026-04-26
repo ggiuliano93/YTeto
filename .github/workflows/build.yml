@@ -1,0 +1,361 @@
+name: Build YTeto
+
+on:
+  workflow_dispatch:
+    inputs:
+      ipa_url:
+        description: "URL to decrypted YouTube IPA"
+        required: true
+        type: string
+
+      display_name:
+        description: "App display name"
+        required: true
+        default: "YouTube"
+        type: string
+
+      bundle_id:
+        description: "Bundle ID"
+        required: true
+        default: "com.google.ios.youtube"
+        type: string
+
+      enable_ytx:
+        description: "YouTube-X"
+        type: boolean
+        default: true
+
+      enable_ytsideload:
+        description: "YTSideload"
+        type: boolean
+        default: true
+
+      enable_youpip:
+        description: "YouPiP"
+        type: boolean
+        default: true
+
+      enable_youquality:
+        description: "YouQuality"
+        type: boolean
+        default: true
+
+      enable_youmute:
+        description: "YouMute"
+        type: boolean
+        default: true
+
+      enable_ryd:
+        description: "Return YouTube Dislikes"
+        type: boolean
+        default: true
+
+      enable_ytabconfig:
+        description: "YTABConfig"
+        type: boolean
+        default: true
+
+      enable_demc:
+        description: "DontEatMyContent"
+        type: boolean
+        default: true
+
+      enable_noytpremium:
+        description: "NoYTPremium"
+        type: boolean
+        default: true
+
+      enable_ytvideoerrorialert:
+        description: "YTVideoErrorAlert"
+        type: boolean
+        default: true
+
+      enable_youspeed:
+        description: "YouSpeed"
+        type: boolean
+        default: true
+
+      enable_ytuhd:
+        description: "YTUHD"
+        type: boolean
+        default: true
+
+      enable_isponsorblock:
+        description: "iSponsorBlock"
+        type: boolean
+        default: true
+
+      enable_openyt:
+        description: "Open in YouTube (Safari extension)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build YTeto
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: brew install make ldid dpkg
+
+      - name: Set PATH
+        run: |
+          echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
+          echo "THEOS=${{ github.workspace }}/theos" >> $GITHUB_ENV
+
+      - name: Install cyan
+        run: pip3 install --force-reinstall --break-system-packages https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
+
+      - name: Cache Theos
+        id: theos
+        uses: actions/cache@v4
+        env:
+          cache-name: theos_cache_9bc7340
+        with:
+          path: theos/
+          key: ${{ env.cache-name }}
+          restore-keys: ${{ env.cache-name }}
+
+      - name: Setup Theos
+        if: steps.theos.outputs.cache-hit != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: theos/theos
+          ref: 9bc73406cf80b711ef4d02c15ff1dedc4478a275
+          path: theos
+          submodules: recursive
+
+      - name: Download iOS SDK
+        if: steps.theos.outputs.cache-hit != 'true'
+        run: |
+          git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/
+          cd sdks
+          git sparse-checkout set --no-cone iPhoneOS16.5.sdk
+          git checkout
+          mv *.sdk $THEOS/sdks
+
+      - name: Clone YouTubeHeader
+        run: |
+          if [ -d "$THEOS/include/YouTubeHeader" ]; then
+            cd $THEOS/include/YouTubeHeader && git pull
+          else
+            cd $THEOS/include && git clone --quiet --depth=1 https://github.com/PoomSmart/YouTubeHeader.git
+          fi
+          if [ "${{ inputs.enable_demc }}" = "true" ]; then
+            rm -rf "$THEOS/include/YTHeaders"
+            cp -r "$THEOS/include/YouTubeHeader" "$THEOS/include/YTHeaders"
+          fi
+
+      - name: Clone PSHeader
+        run: |
+          if [ -d "$THEOS/include/PSHeader" ]; then
+            cd $THEOS/include/PSHeader && git pull
+          else
+            cd $THEOS/include && git clone --quiet --depth=1 https://github.com/PoomSmart/PSHeader.git
+          fi
+
+      - name: Download IPA
+        run: |
+          curl -L "${{ inputs.ipa_url }}" -o YouTube.ipa
+          file_type=$(file --mime-type -b YouTube.ipa)
+          if [[ "$file_type" != "application/zip" && "$file_type" != "application/x-zip-compressed" ]]; then
+            echo "::error::Invalid IPA file. Detected type: $file_type"
+            exit 1
+          fi
+
+      - name: Extract YouTube version
+        run: |
+          unzip -q YouTube.ipa -d ipa_tmp
+          plist=$(find ipa_tmp/Payload -maxdepth 2 -name Info.plist | head -1)
+          version=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$plist")
+          echo "YOUTUBE_VERSION=$version" >> $GITHUB_ENV
+          rm -rf ipa_tmp
+
+      - name: Clone YouTube-X
+        if: ${{ inputs.enable_ytx }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YouTube-X.git
+
+      - name: Clone YTSideload
+        if: ${{ inputs.enable_ytsideload }}
+        run: git clone --quiet --depth=1 https://github.com/Balackburn/YTSideload.git
+
+      - name: Clone YouPiP
+        if: ${{ inputs.enable_youpip }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YouPiP.git
+
+      - name: Clone YouQuality
+        if: ${{ inputs.enable_youquality }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YouQuality.git
+
+      - name: Clone YTVideoOverlay
+        if: ${{ inputs.enable_youpip || inputs.enable_youquality || inputs.enable_ytuhd }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YTVideoOverlay.git
+
+      - name: Clone YouGroupSettings
+        if: ${{ inputs.enable_youpip || inputs.enable_youquality || inputs.enable_ytuhd || inputs.enable_ryd || inputs.enable_demc }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YouGroupSettings.git
+
+      - name: Clone YouMute
+        if: ${{ inputs.enable_youmute }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YouMute.git
+
+      - name: Clone Return-YouTube-Dislikes
+        if: ${{ inputs.enable_ryd }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/Return-YouTube-Dislikes.git
+
+      - name: Clone YTABConfig
+        if: ${{ inputs.enable_ytabconfig }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YTABConfig.git
+
+      - name: Clone DontEatMyContent
+        if: ${{ inputs.enable_demc }}
+        run: git clone --quiet --depth=1 https://github.com/therealFoxster/DontEatMyContent.git
+
+      - name: Clone NoYTPremium
+        if: ${{ inputs.enable_noytpremium }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/NoYTPremium.git
+
+      - name: Clone YTVideoErrorAlert
+        if: ${{ inputs.enable_ytvideoerrorialert }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YTVideoErrorAlert.git
+
+      - name: Clone YouSpeed
+        if: ${{ inputs.enable_youspeed }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YouSpeed.git
+
+      - name: Clone YTUHD
+        if: ${{ inputs.enable_ytuhd }}
+        run: git clone --quiet --depth=1 https://github.com/Tonwalter888/YTUHD.git
+
+      - name: Clone iSponsorBlock
+        if: ${{ inputs.enable_isponsorblock }}
+        run: git clone --quiet --depth=1 https://github.com/Galactic-Dev/iSponsorBlock.git
+
+      - name: Get OpenYouTube Safari Extension
+        if: ${{ inputs.enable_openyt }}
+        run: |
+          git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/BillyCurtis/OpenYouTubeSafariExtension
+          cd OpenYouTubeSafariExtension
+          git sparse-checkout set --no-cone OpenYoutubeSafariExtension.appex
+          git checkout
+          mv *.appex ..
+
+      - name: Download Alderis
+        if: ${{ inputs.enable_isponsorblock }}
+        run: curl -sL https://github.com/hbang/Alderis/releases/download/1.2.3/ws.hbang.alderis_1.2.3_iphoneos-arm64.deb -o alderis.deb
+
+      - name: Build YTVideoOverlay
+        if: ${{ inputs.enable_youpip || inputs.enable_youquality || inputs.enable_ytuhd }}
+        run: cd YTVideoOverlay && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytvideooverlay.deb
+
+      - name: Build YouGroupSettings
+        if: ${{ inputs.enable_youpip || inputs.enable_youquality || inputs.enable_ytuhd || inputs.enable_ryd || inputs.enable_demc }}
+        run: cd YouGroupSettings && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../yougroupsettings.deb
+
+      - name: Build YouTube-X
+        if: ${{ inputs.enable_ytx }}
+        run: cd YouTube-X && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytx.deb
+
+      - name: Build YTSideload
+        if: ${{ inputs.enable_ytsideload }}
+        run: cd YTSideload && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytsideload.deb
+
+      - name: Build YouPiP
+        if: ${{ inputs.enable_youpip }}
+        run: cd YouPiP && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../youpip.deb
+
+      - name: Build YouQuality
+        if: ${{ inputs.enable_youquality }}
+        run: cd YouQuality && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../youquality.deb
+
+      - name: Build YouMute
+        if: ${{ inputs.enable_youmute }}
+        run: cd YouMute && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../youmute.deb
+
+      - name: Build Return-YouTube-Dislikes
+        if: ${{ inputs.enable_ryd }}
+        run: cd Return-YouTube-Dislikes && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ryd.deb
+
+      - name: Build YTABConfig
+        if: ${{ inputs.enable_ytabconfig }}
+        run: cd YTABConfig && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytabconfig.deb
+
+      - name: Build DontEatMyContent
+        if: ${{ inputs.enable_demc }}
+        run: cd DontEatMyContent && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../demc.deb
+
+      - name: Build NoYTPremium
+        if: ${{ inputs.enable_noytpremium }}
+        run: cd NoYTPremium && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../noytpremium.deb
+
+      - name: Build YTVideoErrorAlert
+        if: ${{ inputs.enable_ytvideoerrorialert }}
+        run: cd YTVideoErrorAlert && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytvideoerrorialert.deb
+
+      - name: Build YouSpeed
+        if: ${{ inputs.enable_youspeed }}
+        run: cd YouSpeed && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../youspeed.deb
+
+      - name: Build YTUHD
+        if: ${{ inputs.enable_ytuhd }}
+        run: cd YTUHD && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytuhd.deb
+
+      - name: Build iSponsorBlock
+        if: ${{ inputs.enable_isponsorblock }}
+        run: cd iSponsorBlock && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../isponsorblock.deb
+
+      - name: Build YTeto
+        run: make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb yteto.deb
+
+      - name: Inject tweaks
+        run: |
+          files=$(find . -maxdepth 1 \( -name '*.deb' -o -name '*.appex' \) | sed 's|^./||' | tr '\n' ' ')
+          cyan -i YouTube.ipa \
+               -o YTeto.ipa \
+               -n "${{ inputs.display_name }}" \
+               -b "${{ inputs.bundle_id }}" \
+               -f $files
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: YTeto-${{ env.YOUTUBE_VERSION }}-patched
+          path: YTeto.ipa
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.YOUTUBE_VERSION }}-${{ github.run_number }}
+          name: "YTeto ${{ env.YOUTUBE_VERSION }} (Build ${{ github.run_number }})"
+          body: |
+            ## Tweaked YouTube (YTeto) ${{ env.YOUTUBE_VERSION }}
+
+            | Tweak | Included |
+            |---|---|
+            | YouTube-X | ${{ inputs.enable_ytx }} |
+            | YTSideload | ${{ inputs.enable_ytsideload }} |
+            | YouPiP | ${{ inputs.enable_youpip }} |
+            | YouQuality | ${{ inputs.enable_youquality }} |
+            | YouMute | ${{ inputs.enable_youmute }} |
+            | Return YouTube Dislikes | ${{ inputs.enable_ryd }} |
+            | YTABConfig | ${{ inputs.enable_ytabconfig }} |
+            | DontEatMyContent | ${{ inputs.enable_demc }} |
+            | NoYTPremium | ${{ inputs.enable_noytpremium }} |
+            | YTVideoErrorAlert | ${{ inputs.enable_ytvideoerrorialert }} |
+            | YouSpeed | ${{ inputs.enable_youspeed }} |
+            | YTUHD | ${{ inputs.enable_ytuhd }} |
+            | iSponsorBlock | ${{ inputs.enable_isponsorblock }} |
+            | Open in YouTube | ${{ inputs.enable_openyt }} |
+          files: YTeto.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
