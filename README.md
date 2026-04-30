@@ -82,6 +82,12 @@
         <sub><b>Galactic-Dev</b></sub>
       </a>
     </td>
+    <td align="center">
+      <a href="https://github.com/castdrian">
+        <img src="https://github.com/castdrian.png?size=64" width="64" height="64" style="border-radius:50%"><br>
+        <sub><b>castdrian</b></sub>
+      </a>
+    </td>
   </tr>
   <tr>
     <td align="center">
@@ -105,13 +111,6 @@
     <td align="center">
       <a href="https://github.com/theos">
         <img src="https://github.com/theos.png?size=64" width="64" height="64" style="border-radius:50%"><br>
-        <sub><b>theos</b></sub>
-      </a>
-    </td>
-       </td>
-    <td align="center">
-      <a href="https://github.com/theos](https://github.com/castdrian">
-        <img src="https://github.com/castdrian.png?size=64" width="64" height="64" style="border-radius:50%"><br>
         <sub><b>theos</b></sub>
       </a>
     </td>
