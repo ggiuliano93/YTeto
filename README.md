@@ -23,6 +23,8 @@
 | [YouSpeed](https://github.com/PoomSmart/YouSpeed) | Adds a playback speed button directly to the video overlay for faster access. |
 | [YTUHD](https://github.com/Tonwalter888/YTUHD) | Unlocks 1440p (2K) and 2160p (4K) resolution options in the YouTube app and it fixes playback. |
 | [iSponsorBlock](https://github.com/Galactic-Dev/iSponsorBlock) | Implements the SponsorBlock API to automatically skip sponsored segments in YouTube videos. |
+| [YTAnotherMiniplayer](https://github.com/PoomSmart/YTAnotherMiniplayer) | Uses an alternative YouTube miniplayer style. |
+| [Gonerino](https://github.com/castdrian/Gonerino) | A YouTube tweak that allows you to block specific channels and automatically remove their videos from your feed. |
 | [Alderis](https://github.com/hbang/Alderis) | A color picker library required by iSponsorBlock for its color customization UI. |
 | [Open in YouTube](https://github.com/BillyCurtis/OpenYouTubeSafariExtension) | Adds an "Open in YouTube" prompt in Safari for sideloaded YouTube. |
 
@@ -47,6 +49,8 @@
 - You will find YTeto.ipa in the release tab of your forked page.
 
 - Download the .ipa and Install it with [Feather](https://github.com/khcrysalis/Feather) if you have a certificate or [AltStore](https://altstore.io/), [Sidestore](https://sidestore.io/) and [LiveContainer](https://github.com/LiveContainer/LiveContainer) otherwise.
+
+- If you have playback issues open settings/ytuhd and enable "Fix Playback"
 
 - Enjoy!
 
@@ -101,6 +105,13 @@
     <td align="center">
       <a href="https://github.com/theos">
         <img src="https://github.com/theos.png?size=64" width="64" height="64" style="border-radius:50%"><br>
+        <sub><b>theos</b></sub>
+      </a>
+    </td>
+       </td>
+    <td align="center">
+      <a href="https://github.com/theos](https://github.com/castdrian">
+        <img src="https://github.com/castdrian.png?size=64" width="64" height="64" style="border-radius:50%"><br>
         <sub><b>theos</b></sub>
       </a>
     </td>
