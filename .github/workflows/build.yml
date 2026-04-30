@@ -80,8 +80,18 @@ on:
         type: boolean
         default: true
 
+      enable_ytanothermini:
+        description: "YTAnotherMiniplayer"
+        type: boolean
+        default: true
+
       enable_isponsorblock:
         description: "iSponsorBlock"
+        type: boolean
+        default: true
+
+      enable_gonerino:
+        description: "Gonerino"
         type: boolean
         default: true
 
@@ -202,7 +212,7 @@ jobs:
         run: git clone --quiet --depth=1 https://github.com/PoomSmart/YTVideoOverlay.git
 
       - name: Clone YouGroupSettings
-        if: ${{ inputs.enable_youpip || inputs.enable_youquality || inputs.enable_ytuhd || inputs.enable_ryd || inputs.enable_demc }}
+        if: ${{ inputs.enable_youpip || inputs.enable_youquality || inputs.enable_ytuhd || inputs.enable_ryd || inputs.enable_demc || inputs.enable_ytanothermini }}
         run: git clone --quiet --depth=1 https://github.com/PoomSmart/YouGroupSettings.git
 
       - name: Clone YouMute
@@ -237,9 +247,17 @@ jobs:
         if: ${{ inputs.enable_ytuhd }}
         run: git clone --quiet --depth=1 https://github.com/Tonwalter888/YTUHD.git
 
+      - name: Clone YTAnotherMiniplayer
+        if: ${{ inputs.enable_ytanothermini }}
+        run: git clone --quiet --depth=1 https://github.com/PoomSmart/YTAnotherMiniplayer.git
+
       - name: Clone iSponsorBlock
         if: ${{ inputs.enable_isponsorblock }}
         run: git clone --quiet --depth=1 https://github.com/Galactic-Dev/iSponsorBlock.git
+
+      - name: Clone Gonerino
+        if: ${{ inputs.enable_gonerino }}
+        run: git clone --quiet --depth=1 https://github.com/castdrian/Gonerino.git
 
       - name: Get OpenYouTube Safari Extension
         if: ${{ inputs.enable_openyt }}
@@ -259,7 +277,7 @@ jobs:
         run: cd YTVideoOverlay && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytvideooverlay.deb
 
       - name: Build YouGroupSettings
-        if: ${{ inputs.enable_youpip || inputs.enable_youquality || inputs.enable_ytuhd || inputs.enable_ryd || inputs.enable_demc }}
+        if: ${{ inputs.enable_youpip || inputs.enable_youquality || inputs.enable_ytuhd || inputs.enable_ryd || inputs.enable_demc || inputs.enable_ytanothermini }}
         run: cd YouGroupSettings && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../yougroupsettings.deb
 
       - name: Build YouTube-X
@@ -310,9 +328,17 @@ jobs:
         if: ${{ inputs.enable_ytuhd }}
         run: cd YTUHD && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytuhd.deb
 
+      - name: Build YTAnotherMiniplayer
+        if: ${{ inputs.enable_ytanothermini }}
+        run: cd YTAnotherMiniplayer && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytanothermini.deb
+
       - name: Build iSponsorBlock
         if: ${{ inputs.enable_isponsorblock }}
         run: cd iSponsorBlock && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../isponsorblock.deb
+
+      - name: Build Gonerino
+        if: ${{ inputs.enable_gonerino }}
+        run: cd Gonerino && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../gonerino.deb
 
       - name: Build YTeto
         run: make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb yteto.deb
@@ -354,7 +380,9 @@ jobs:
             | YTVideoErrorAlert | ${{ inputs.enable_ytvideoerrorialert }} |
             | YouSpeed | ${{ inputs.enable_youspeed }} |
             | YTUHD | ${{ inputs.enable_ytuhd }} |
+            | YTAnotherMiniplayer | ${{ inputs.enable_ytanothermini }} |
             | iSponsorBlock | ${{ inputs.enable_isponsorblock }} |
+            | Gonerino | ${{ inputs.enable_gonerino }} |
             | Open in YouTube | ${{ inputs.enable_openyt }} |
           files: YTeto.ipa
         env:
